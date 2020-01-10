@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 
@@ -24,14 +25,26 @@
     }
 
 </style>
-  
-  <script>
-  // from https://www.tutorialrepublic.com/faq/how-to-get-the-current-url-with-javascript.php
 
+  <script>
+  
+var clientId = 'NfihvUrqJtx0Ijjp';
+//var redirectUri = 'http://userpages.flemingc.on.ca/~shawnm/collab/index.html';
+//var redirectUri = 'http://projects.geocommunity.net/index.html';
+var redirectUri = 'https://shawnmflemingc.github.io/collabprojects/index.html';
+var urlParams = new URLSearchParams(window.location.search); // gets all URL parameters
+
+var match = (window.location.hash) ? window.location.hash.match(/#access_token=([^&]+)/) : false;
+  if (match[1]==undefined) {
+      window.location.replace('https://fleming.maps.arcgis.com/sharing/rest/oauth2/authorize?client_id='+clientId+'&response_type=token&expiration=20160&redirect_uri=' + window.encodeURIComponent(redirectUri), 'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes')
+
+  }
+  
+  
   function createTable(response){  // Only executes after response from server
      
      console.log(response.data.features);
-     var tableCode = "<table id='AvailTable' class='stripe display'><thead><tr>"; //"<table id='AvailTable'><thead><tr><th>ID</th><th>Title</th><th>Org</th></tr></thead><tbody>";
+     var tableCode = "<table id='AvailTable' class='stripe display'><thead><tr>"; 
      for (var key in response.data.features[0].attributes) {
        tableCode += "<th>" + key + "</th>";
      }
@@ -56,7 +69,7 @@
  
     $('#AvailTable tbody').on('click', 'tr', function () {
         var data = table.row( this ).data();
-        window.location.href = 'projectviewer.html?id='+data[0];
+        window.location.href = 'projectviewer.html?id='+data[0]+match[0];
     } );
    }
    
@@ -73,7 +86,7 @@ $(function(){
     ], function(
       lang, esriRequest
     ) { 
-      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/ArcGIS/rest/services/GIS_Collaborative_Projects_2020/FeatureServer/0/query?where=ProjectID%3E2000&objectIds=&outFields=ProjectID%2CProjectName%2COrganizationName&returnHiddenFields=false&returnGeometry=false&orderByFields=ProjectID&f=json";
+      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020_View/FeatureServer/0/query?where=ProjectID%3E2000&objectIds=&outFields=ProjectID%2CProjectName%2COrganizationName&returnHiddenFields=false&returnGeometry=false&orderByFields=ProjectID&token="+match[1]+"&f=json";
       esriRequest(url,{
           responseType:'json',
           callbackParamName:'callback',
@@ -82,7 +95,7 @@ $(function(){
           createTable(resp);
           formatTable();
         }),lang.hitch(this,function(error){
-          alert("Record not found or timeout error");
+          document.getElementById("Title").innerHTML = "Failed. Try logging in again <a href='" + redirectUri + "'>using this link</a>";
         }));
         
     });
@@ -96,7 +109,7 @@ $(function(){
 
 <body>
 
-    <h1>Collaborative Project List</h1>
+    <h1 id="Title">Collaborative Project List</h1>
     <div id="AvailableProjectList"></div>
 </body>
 

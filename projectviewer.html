@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 
@@ -47,21 +48,36 @@
       parseOnLoad: true
     };
     var urlParams = new URLSearchParams(window.location.search);
+
+var clientId = 'NfihvUrqJtx0Ijjp'; // ArcGIS Online registered application identifier
+var urlParams = new URLSearchParams(window.location.search); // gets all URL parameters
+var restServiceUrl = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020_View/FeatureServer/0/";
+var outFields = "ProjectID,ProjectName,organizationname,Requirements,Description,Skills,Deliverables,Data,yourname,contactemail,OrganizationWebsite";
+//var redirectUri = 'http://userpages.flemingc.on.ca/~shawnm/collab/projectviewer.html?id='+urlParams.get('id');
+//var redirectUri = 'http://projects.geocommunity.net/projectviewer.html?id='+urlParams.get('id');
+var redirectUri = 'https://shawnmflemingc.github.io/projectviewer.html?id='+urlParams.get('id');
+
+
+var match = (window.location.hash) ? window.location.hash.match(/#access_token=([^&]+)/) : false;
+  if (match[1]==undefined) {
+      window.location.replace('https://www.arcgis.com/sharing/rest/oauth2/authorize?client_id='+clientId+'&response_type=token&expiration=20160&redirect_uri=' + window.encodeURIComponent(redirectUri), 'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes')
+  } 
+
     
   </script>
   <script src="https://js.arcgis.com/4.2/"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
   <script>
-
+//function <find>s all occurrences in <str> and substitutes with <replace>
 function replaceAll(str, find, replace) {
     return str.replace(new RegExp(find, 'g'), replace);
 }
 
-//jQuery run everything after page load
+//jQuery run after page load
 $(function(){
 function createTable(response){
-     
+
         
      var tbl = document.getElementById("tableDiv");
      var tblBody = document.createElement("tbody");
@@ -78,7 +94,7 @@ function createTable(response){
        var cell = document.createElement("td");
        var cell2 = document.createElement("td");
 
-       switch(key)
+       switch(key)  // Switch to watch for certain fields
        {
           case "requirements": 
             cell.innerHTML = "Requirements";
@@ -109,28 +125,31 @@ function createTable(response){
      };
  
      tbl.appendChild(tblBody);
-   }
+   } // end function createTable
     
-    
+    // Uses ArcGIS JavaScript API
     require([
       "dojo/_base/lang",
       "esri/request",
       "dojo/domReady!"
     ], function(
       lang, esriRequest
-    ) { /*id=2020*/
-      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020/FeatureServer/0/query?where=ProjectID%3D"+urlParams.get('id')+"&outFields=ProjectID,ProjectName,organizationname,Requirements,Description,Skills,Deliverables,Data,yourname,contactemail,OrganizationWebsite&f=json&token=";
+    ) { // Generate request against ArcGIS Online REST API endpoint
+        // Token is retrieved from the url #access_token= and only valid after user is authenticated
+      var url = restServiceUrl + "query?where=ProjectID%3D"+urlParams.get('id')+"&outFields="+outFields+"&f=json&token=" + match[1];
       esriRequest(url,{
           responseType:'json',
           callbackParamName:'callback',
           timeout:5000
         }).then(lang.hitch(this,function(resp){
+          // Successfully retrieved data
           createTable(resp);
         }),lang.hitch(this,function(error){
-          alert("Record not found or timeout error");
+          document.getElementById("OrgName").innerHTML = "Failed to retrieve record";
+          document.getElementById("ProjectName").innerHTML = "Try logging in again <a href='" + redirectUri + "'>using this link</a>";
         }));
         
-    });
+    }); // End esriRequest
 });
   </script>
 
