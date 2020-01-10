@@ -194,7 +194,11 @@ function createTable(response){
           timeout:5000
         }).then(lang.hitch(this,function(resp){
           // Successfully retrieved data
-          createTable(resp);
+          if (resp.data.features.length > 0) {
+            createTable(resp);
+          } else {
+            document.getElementById('ProjectName').innerHTML = "Failed to find project with that ID."
+          }
         }),lang.hitch(this,function(error){
           if (error.code==498) {
             if (urlParams.get("tokenerror") != "true") { // only execute redirect once to avoid loop

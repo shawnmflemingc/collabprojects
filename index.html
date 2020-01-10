@@ -93,8 +93,12 @@ $(function(){
           callbackParamName:'callback',
           timeout:8000
         }).then(lang.hitch(this,function(resp){
-          createTable(resp);
-          formatTable();
+          if (resp.data.features.length > 0) {
+            createTable(resp);
+            formatTable();
+          } else {
+            document.getElementById("AvailableProjectList").innerHTML = "No records found."
+          }
         }),lang.hitch(this,function(error){
           if (error.code==498) { // token error
             if (urlParams.get("tokenerror") != "true") { // only execute redirect once to avoid loop
