@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+  <title>Collaborative Projects List</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.2/esri/css/main.css">
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/4.2/dijit/themes/claro/claro.css">
+  
+  <style>
+    html,
+    body,
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Trebuchet MS";
+    }
+    #header {
+      height: 3%;
+      overflow: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    #tableDiv {
+      border-collapse:collapse;
+      width:auto;
+      margin-left:auto;
+      margin-right:auto;
+    }
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+    tr:nth-child(even) {
+      background-color: #dddddd;
+    }
+  </style>
+  <script>
+    var dojoConfig = {
+      parseOnLoad: true
+    };
+    var urlParams = new URLSearchParams(window.location.search);
+    
+  </script>
+  <script src="https://js.arcgis.com/4.2/"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <script>
+//jQuery run everything after page load
+$(function(){
+function createTable(response){
+     
+        
+     var tbl = document.getElementById("tableDiv");
+     var tblBody = document.createElement("tbody");
+     var header = tbl.createTHead();
+     var headerRow = header.insertRow(0);
+     var headerCell = document.createElement("th");
+     headerCell.innerHTML = "Field";
+     headerRow.appendChild(headerCell);
+     var headerCell2 = document.createElement("th");
+     headerCell2.innerHTML = "Value";
+     headerRow.appendChild(headerCell2);
+     for (var key in response.data.features["0"].attributes) {
+       var row = document.createElement("tr");
+       var cell = document.createElement("td");
+       var cell2 = document.createElement("td");
+       cell.innerHTML = key;
+       cell2.innerHTML = response.data.features["0"].attributes[key];
+       row.appendChild(cell);
+       row.appendChild(cell2);
+       tblBody.appendChild(row);
+     };
+ 
+     tbl.appendChild(tblBody);
+   }
+    
+    
+    require([
+      "dojo/_base/lang",
+      "esri/request",
+      "dojo/domReady!"
+    ], function(
+      lang, esriRequest
+    ) { /*id=2020*/
+      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020/FeatureServer/0/query?where=ProjectID%3D"+urlParams.get('id')+"&outFields=ProjectID,ProjectName,organizationname,Requirements,Description,Skills,Deliverables,Data,yourname,contactemail,OrganizationWebsite&f=json&token=";
+      esriRequest(url,{
+          responseType:'json',
+          callbackParamName:'callback',
+          timeout:4000
+        }).then(lang.hitch(this,function(resp){
+          createTable(resp);
+//debug:          console.info(resp.data.features["0"].attributes);
+        }),lang.hitch(this,function(error){
+          alert("Record not found");
+        }));
+        
+    });
+});
+  </script>
+
+</head>
+
+<body>
+
+    <h1>Project Details</h1>
+    <table id="tableDiv"></table>
+    <p>Use this Facebook like button to advertise you are interested in this page:<div id="fblikehere"></div>
+    
+    <script>
+    document.getElementById("fblikehere").innerHTML = '<iframe src="https://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fprojects.geocommunity.net%3Fid%3D' + urlParams.get('id') +'&width=67&layout=box_count&action=like&size=large&share=false&height=65&appId" width="69" height="65" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
+    </script>
+    </p>
+ </body>
+</html>

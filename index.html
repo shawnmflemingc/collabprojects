@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no" />
+  <title>Collaborative Projects List</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.2/esri/css/main.css">
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/4.2/dijit/themes/claro/claro.css">
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-2.2.3/dt-1.10.12/se-1.2.0/datatables.min.css"/>
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+  <script>
+    var dojoConfig = {
+      parseOnLoad: true
+    };
+  </script>
+  <script src="https://js.arcgis.com/4.2/"></script>
+  
+<style>
+ body {
+      font-family: "Trebuchet MS";
+    }
+
+</style>
+  
+  <script>
+  // from https://www.tutorialrepublic.com/faq/how-to-get-the-current-url-with-javascript.php
+
+  function createTable(response){  // Only executes after response from server
+     
+     console.log(response.data.features);
+     var tableCode = "<table id='AvailTable' class='stripe display'><thead><tr>"; //"<table id='AvailTable'><thead><tr><th>ID</th><th>Title</th><th>Org</th></tr></thead><tbody>";
+     for (var key in response.data.features[0].attributes) {
+       tableCode += "<th>" + key + "</th>";
+     }
+     tableCode += "</tr></thead><tbody>";
+     for (projectid in response.data.features) {
+       tableCode += "<tr>";
+       for (var key in response.data.features[projectid].attributes) {
+         tableCode += "<td>"+response.data.features[projectid].attributes[key]+"</td>";
+       };
+       tableCode += "</tr>";
+     };
+     tableCode += "</tbody></table>";
+     document.getElementById("AvailableProjectList").innerHTML = tableCode;
+   }
+   
+   function formatTable() {  // Executes after response from server and table created
+    var table = $('#AvailTable').DataTable( {
+        "paging": true,
+		"lengthMenu": [ [5, 10, -1], [5, 10, "All"] ],
+		stateSave: true
+    } );
+ 
+    $('#AvailTable tbody').on('click', 'tr', function () {
+        var data = table.row( this ).data();
+        window.location.href = 'projectviewer.html?id='+data[0];
+    } );
+   }
+   
+   
+//jQuery run everything after page load
+$(function(){
+
+    var urlParams = new URLSearchParams(window.location.search);
+    
+    require([
+      "dojo/_base/lang",
+      "esri/request",
+      "dojo/domReady!"
+    ], function(
+      lang, esriRequest
+    ) { 
+      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/ArcGIS/rest/services/GIS_Collaborative_Projects_2020/FeatureServer/0/query?where=ProjectID%3E2000&objectIds=&outFields=ProjectID%2CProjectName%2COrganizationName&returnHiddenFields=false&returnGeometry=false&orderByFields=ProjectID&f=json";
+      esriRequest(url,{
+          responseType:'json',
+          callbackParamName:'callback',
+          timeout:5000
+        }).then(lang.hitch(this,function(resp){
+          createTable(resp);
+          formatTable();
+        }),lang.hitch(this,function(error){
+          alert("Record not found or timeout error");
+        }));
+        
+    });
+    
+    
+});
+
+  </script>
+
+</head>
+
+<body>
+
+    <h1>Collaborative Project List</h1>
+    <div id="AvailableProjectList"></div>
+</body>
+
+</html>
