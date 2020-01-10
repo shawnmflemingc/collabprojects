@@ -29,6 +29,8 @@
   <script>
   
 var clientId = 'NfihvUrqJtx0Ijjp';
+var restServiceUrl = 'https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020_View/FeatureServer/0/';
+var outFields = 'ProjectID,ProjectName,OrganizationName';
 //var redirectUri = 'http://userpages.flemingc.on.ca/~shawnm/collab/index.html';
 //var redirectUri = 'http://projects.geocommunity.net/index.html';
 var redirectUri = 'https://shawnmflemingc.github.io/collabprojects/index.html';
@@ -39,7 +41,6 @@ var match = (window.location.hash) ? window.location.hash.match(/#access_token=(
       window.location.replace('https://fleming.maps.arcgis.com/sharing/rest/oauth2/authorize?client_id='+clientId+'&response_type=token&expiration=20160&redirect_uri=' + window.encodeURIComponent(redirectUri), 'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes')
 
   }
-  
   
   function createTable(response){  // Only executes after response from server
      
@@ -74,7 +75,7 @@ var match = (window.location.hash) ? window.location.hash.match(/#access_token=(
    }
    
    
-//jQuery run everything after page load
+//jQuery run everything after page load (main)
 $(function(){
 
     var urlParams = new URLSearchParams(window.location.search);
@@ -86,16 +87,23 @@ $(function(){
     ], function(
       lang, esriRequest
     ) { 
-      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020_View/FeatureServer/0/query?where=ProjectID%3E2000&objectIds=&outFields=ProjectID%2CProjectName%2COrganizationName&returnHiddenFields=false&returnGeometry=false&orderByFields=ProjectID&token="+match[1]+"&f=json";
+      var url = restServiceUrl + "query?where=ProjectID%3E2000&objectIds=&outFields="+outFields+"&returnHiddenFields=false&returnGeometry=false&orderByFields=ProjectID&token="+match[1]+"&f=json";
       esriRequest(url,{
           responseType:'json',
           callbackParamName:'callback',
-          timeout:5000
+          timeout:8000
         }).then(lang.hitch(this,function(resp){
           createTable(resp);
           formatTable();
         }),lang.hitch(this,function(error){
-          document.getElementById("Title").innerHTML = "Failed. Try logging in again <a href='" + redirectUri + "'>using this link</a>";
+          if (error.code==498) { // token error
+            if (urlParams.get("tokenerror") != "true") { // only execute redirect once to avoid loop
+              window.location.replace(redirectUri+"&tokenerror=true");
+            }
+            document.getElementById("Title").innerHTML = "Try again <a href='" + redirectUri + "'>using this link</a>";
+          } else {
+          document.getElementById("Title").innerHTML = "Failed "+error.details+". Try logging in again <a href='" + redirectUri + "'>using this link</a>";
+          }
         }));
         
     });

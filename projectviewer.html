@@ -152,7 +152,9 @@ function createTable(response){
           createTable(resp);
         }),lang.hitch(this,function(error){
           if (error.code==498) {
-            window.location.replace(redirectUri);
+            if (urlParams.get("tokenerror") != "true") { // only execute redirect once to avoid loop
+              window.location.replace(redirectUri+"&tokenerror=true");
+            }
             document.getElementById("ProjectName").innerHTML = "Try again <a href='" + redirectUri + "'>using this link</a>";
           } else {
             document.getElementById("OrgName").innerHTML = "Failed to retrieve record (" + error.details + ")";
