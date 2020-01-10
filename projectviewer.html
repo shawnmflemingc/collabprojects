@@ -79,6 +79,7 @@ $(function(){
      var oauthUrl = 'https://fleming.maps.arcgis.com/sharing/rest/oauth2/authorize?client_id=' + clientId + '&response_type=token&expiration=20160&redirect_uri=' + window.encodeURIComponent(redirectUri);
      window.location.replace(oauthUrl,'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes');
      document.getElementById("tableDiv").innerHTML = "<h1><a href='"+oauthUrl+"'>Please click here to authenticate with Fleming's ArcGIS Online to continue</a></h1>";
+     throw new Error("Not authenticated");
   } 
 
 function createTable(response){
@@ -151,7 +152,7 @@ function createTable(response){
           createTable(resp);
         }),lang.hitch(this,function(error){
           if (error.code==498) {
-            //window.location.replace(redirectUri);
+            window.location.replace(redirectUri);
             document.getElementById("ProjectName").innerHTML = "Try again <a href='" + redirectUri + "'>using this link</a>";
           } else {
             document.getElementById("OrgName").innerHTML = "Failed to retrieve record (" + error.details + ")";
