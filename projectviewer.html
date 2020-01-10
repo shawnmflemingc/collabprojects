@@ -20,6 +20,7 @@
     }
     body {
       font-family: "Trebuchet MS";
+      margin: 0;
     }
     #header {
       height: 3%;
@@ -42,28 +43,61 @@
     tr:nth-child(even) {
       background-color: #dddddd;
     }
-  </style>
-  <script>
-    var dojoConfig = {
-      parseOnLoad: true
-    };
-    var urlParams = new URLSearchParams(window.location.search);
+ 
+    /* from w3schools https://www.w3schools.com/css/css_navbar.asp */
+    ul.topnav {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+    }
 
-var clientId = 'NfihvUrqJtx0Ijjp'; // ArcGIS Online registered application identifier
-var urlParams = new URLSearchParams(window.location.search); // gets all URL parameters
-var restServiceUrl = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020_View/FeatureServer/0/";
-var outFields = "ProjectID,ProjectName,organizationname,Requirements,Description,Skills,Deliverables,Data,yourname,contactemail,OrganizationWebsite";
-//var redirectUri = 'http://userpages.flemingc.on.ca/~shawnm/collab/projectviewer.html?id='+urlParams.get('id');
-//var redirectUri = 'http://projects.geocommunity.net/projectviewer.html?id='+urlParams.get('id');
-var redirectUri = 'https://shawnmflemingc.github.io/collabprojects/projectviewer.html?id='+urlParams.get('id');
+    ul.topnav li {float: left;}
+
+    ul.topnav li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+    ul.topnav li a:hover:not(.active) {background-color: #111;}
+
+    ul.topnav li a.active {background-color: #4CAF50;}
+
+    ul.topnav li.right {float: right;}
+
+    @media screen and (max-width: 600px) {
+      ul.topnav li.right, 
+      ul.topnav li {float: none;}
+    }
+    /* end from w3schools */
+  </style>
+  <script src="https://js.arcgis.com/4.2/"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <script>
+      var dojoConfig = {
+        parseOnLoad: true
+      };
+      var urlParams = new URLSearchParams(window.location.search);
+
+  var clientId = 'NfihvUrqJtx0Ijjp'; // ArcGIS Online registered application identifier
+  var urlParams = new URLSearchParams(window.location.search); // gets all URL parameters
+  var restServiceUrl = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/GIS_Collaborative_Projects_2020_View/FeatureServer/0/";
+  var outFields = "ProjectID,ProjectName,organizationname,Requirements,Description,Skills,Deliverables,Data,yourname,contactemail,OrganizationWebsite";
+  //var redirectUri = 'http://userpages.flemingc.on.ca/~shawnm/collab/projectviewer.html?id='+urlParams.get('id');
+  //var redirectUri = 'http://projects.geocommunity.net/projectviewer.html?id='+urlParams.get('id');
+  var redirectUri = 'https://shawnmflemingc.github.io/collabprojects/projectviewer.html?id='+urlParams.get('id');
+  var prevUri = 'projectviewer.html?id='+(parseInt(urlParams.get('id'),10)-1);
+  var nextUri = 'projectviewer.html?id='+(parseInt(urlParams.get('id'),10)+1);
 
 
 
 
     
   </script>
-  <script src="https://js.arcgis.com/4.2/"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
   <script>
 //function <find>s all occurrences in <str> and substitutes with <replace>
@@ -77,11 +111,16 @@ $(function(){
   var match = (window.location.hash) ? window.location.hash.match(/#access_token=([^&]+)/) : false;
   if (match[1]==undefined) {
      var oauthUrl = 'https://fleming.maps.arcgis.com/sharing/rest/oauth2/authorize?client_id=' + clientId + '&response_type=token&expiration=20160&redirect_uri=' + window.encodeURIComponent(redirectUri);
-     window.location.replace(oauthUrl,'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes');
+     //window.location.replace(oauthUrl,'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes');
      document.getElementById("tableDiv").innerHTML = "<h1><a href='"+oauthUrl+"'>Please click here to authenticate with Fleming's ArcGIS Online to continue</a></h1>";
      throw new Error("Not authenticated");
   } 
+// Replaces links in menu with content including access_key oauth2
+  $("#previd").attr("href", prevUri+match[0]);
+  $("#nextid").attr("href", nextUri+match[0]);
+  $("#home").attr("href", "index.html"+match[0]);
 
+  // Main function called after retrieving data to format for table
 function createTable(response){
 
         
@@ -95,6 +134,8 @@ function createTable(response){
      var headerCell2 = document.createElement("th");
      headerCell2.innerHTML = "Value";
      headerRow.appendChild(headerCell2);
+     // For each field (item) in the returned data. 
+     //The key is the field name and "0" entry is first record returned (there is only one by design here)
      for (var key in response.data.features["0"].attributes) {
        var row = document.createElement("tr");
        var cell = document.createElement("td");
@@ -119,10 +160,14 @@ function createTable(response){
           case "projectname":
             document.getElementById('ProjectName').innerHTML = response.data.features["0"].attributes[key];
             break;
+          case "ProjectID": 
+            document.getElementById('ProjectIDMenu').innerHTML = response.data.features["0"].attributes[key];
+            // no break to display ProjectID in table
           default:
             cell.innerHTML = key;
             cell2.innerHTML = response.data.features["0"].attributes[key];
        }
+       // Does the cell have any content? If so add it to the table
        if (cell.innerHTML.length > 0) {
          row.appendChild(cell);
          row.appendChild(cell2);
@@ -169,7 +214,13 @@ function createTable(response){
 </head>
 
 <body>
-
+  <ul class="topnav">
+    <li><a href="index.html" id="home">Project List</a></li>
+    <li><a href="#prev" id="previd">&lt;&lt;Prev</a></li>
+    <li><a class="active" href="#contact" id="ProjectIDMenu" style="width:35px;">&nbsp;</a></li>
+    <li><a href="#next" id="nextid">Next&gt;&gt;</a></li>
+  </ul>
+  
   <h1 id="OrgName"></h1>
   <h2 id="ProjectName">Loading Project...</h2>
     <table id="tableDiv"></table>

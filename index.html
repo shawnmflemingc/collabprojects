@@ -64,7 +64,7 @@ var match = (window.location.hash) ? window.location.hash.match(/#access_token=(
    function formatTable() {  // Executes after response from server and table created
     var table = $('#AvailTable').DataTable( {
         "paging": true,
-		"lengthMenu": [ [5, 10, -1], [5, 10, "All"] ],
+		"lengthMenu": [ [10, 20, -1], [10, 20, "All"] ],
 		stateSave: true
     } );
  
