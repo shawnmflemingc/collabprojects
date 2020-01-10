@@ -24,7 +24,7 @@
       height: 3%;
       overflow: auto;
     }
-    h1 {
+    h1,h2 {
       text-align: center;
     }
     #tableDiv {
@@ -53,6 +53,11 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
   <script>
+
+function replaceAll(str, find, replace) {
+    return str.replace(new RegExp(find, 'g'), replace);
+}
+
 //jQuery run everything after page load
 $(function(){
 function createTable(response){
@@ -72,11 +77,35 @@ function createTable(response){
        var row = document.createElement("tr");
        var cell = document.createElement("td");
        var cell2 = document.createElement("td");
-       cell.innerHTML = key;
-       cell2.innerHTML = response.data.features["0"].attributes[key];
-       row.appendChild(cell);
-       row.appendChild(cell2);
-       tblBody.appendChild(row);
+
+       switch(key)
+       {
+          case "requirements": 
+            cell.innerHTML = "Requirements";
+            cell2.innerHTML = "<lo>";
+            var reqArray = response.data.features["0"].attributes[key].split("_-_");
+            reqArray.forEach(item => {if (item.length > 0) {cell2.innerHTML += "<li>" + replaceAll(item,"_"," ") + "</li>"}});
+            cell2.innerHTML += "</lo>";
+            break;
+          case "organizationwebsite":
+            cell.innerHTML = "Website URL"
+            cell2.innerHTML = "<a href='" + response.data.features["0"].attributes[key] + "' target='_blank'>" + response.data.features["0"].attributes[key] + "</a>"
+            break;
+          case "organizationname":
+            document.getElementById('OrgName').innerHTML = response.data.features["0"].attributes[key];
+            break;
+          case "projectname":
+            document.getElementById('ProjectName').innerHTML = response.data.features["0"].attributes[key];
+            break;
+          default:
+            cell.innerHTML = key;
+            cell2.innerHTML = response.data.features["0"].attributes[key];
+       }
+       if (cell.innerHTML.length > 0) {
+         row.appendChild(cell);
+         row.appendChild(cell2);
+         tblBody.appendChild(row);
+       }
      };
  
      tbl.appendChild(tblBody);
@@ -94,12 +123,11 @@ function createTable(response){
       esriRequest(url,{
           responseType:'json',
           callbackParamName:'callback',
-          timeout:4000
+          timeout:5000
         }).then(lang.hitch(this,function(resp){
           createTable(resp);
-//debug:          console.info(resp.data.features["0"].attributes);
         }),lang.hitch(this,function(error){
-          alert("Record not found");
+          alert("Record not found or timeout error");
         }));
         
     });
@@ -110,9 +138,10 @@ function createTable(response){
 
 <body>
 
-    <h1>Project Details</h1>
+  <h1 id="OrgName">Client Name</h1>
+  <h2 id="ProjectName">Project Name</h2>
     <table id="tableDiv"></table>
-    <p>Use this Facebook like button to advertise you are interested in this page:<div id="fblikehere"></div>
+    <p>Use this Facebook like button to advertise you are interested in this project:<div id="fblikehere"></div>
     
     <script>
     document.getElementById("fblikehere").innerHTML = '<iframe src="https://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fprojects.geocommunity.net%3Fid%3D' + urlParams.get('id') +'&width=67&layout=box_count&action=like&size=large&share=false&height=65&appId" width="69" height="65" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
