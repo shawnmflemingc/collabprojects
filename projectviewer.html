@@ -72,6 +72,46 @@
       ul.topnav li.right, 
       ul.topnav li {float: none;}
     }
+
+    /* also from w3schools but for bidding bottom bar */
+    ul.bid {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+
+    li.bid {
+      float: left;
+    }
+
+    li.bid a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+    li.bid div {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    li.bid a:hover:not(.active) {
+      background-color: #111;
+    }
+
+    .active {
+      background-color: #4CAF50;
+    }
+
     /* end from w3schools */
   </style>
   <script src="https://js.arcgis.com/4.2/"></script>
@@ -205,6 +245,7 @@ function createTable(response){
           // Successfully retrieved data
           if (resp.data.features.length > 0) {
             createTable(resp);
+            getProjectRank();
           } else {
             document.getElementById('ProjectName').innerHTML = "Failed to find project with that ID."
           }
@@ -221,13 +262,55 @@ function createTable(response){
         }));
         
     }); // End esriRequest
+
+
+    function getProjectRank() {
+    require([
+      "dojo/_base/lang",
+      "esri/request",
+      "dojo/domReady!"
+    ], function(
+      lang, esriRequest
+    ) { // Generate request against ArcGIS Online REST API endpoint
+        // Token is retrieved from the url #access_token= and only valid after user is authenticated
+      
+  	  var whereClause = "ProjectID="+urlParams.get('id'); // Return all records
+      console.log("bid check start...")
+      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/ArcGIS/rest/services/Collaborative_Project_Bids/FeatureServer/0/query?where="+whereClause+"&outFields=*&orderByFields=EditDate+DESC&f=json&token="+match[1];
+      esriRequest(url,{
+          responseType:'json',
+          callbackParamName:'callback',
+          timeout:10000
+        }).then(lang.hitch(this,function(resp){
+					console.log(resp);
+          if (resp.data.features.length > 0) {
+            $("#bid"+resp.data.features[0].attributes["Ranking"]).addClass("active");
+          }
+        }),lang.hitch(this,function(error){
+					console.log(error);
+        }));
+        
+    }); // End esriRequest	
+}	
 });
+
+
+
+
+
   </script>
 
 </head>
 
 <body>
-  <ul class="topnav">
+  <ul class="bid">
+    <li class="bid"><div>Your Bid:</div></li>
+    <li class="bid"><a id="bid1" href="#home">1</a></li>
+    <li class="bid"><a id="bid2" href="#news">2</a></li>
+    <li class="bid"><a id="bid3" href="#contact">3</a></li>
+    <li class="bid"><a id="bid4" href="#about">4</a></li>
+  </ul>
+    <ul class="topnav">
     <li><a href="index.html" id="home">Project List</a></li>
     <li><a href="#prev" id="previd">&lt;&lt;Prev</a></li>
     <li><a class="active" href="#contact" id="ProjectIDMenu" style="width:35px;">&nbsp;</a></li>
@@ -243,5 +326,6 @@ function createTable(response){
     document.getElementById("fblikehere").innerHTML = '<iframe src="https://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fprojects.geocommunity.net%3Fid%3D' + urlParams.get('id') +'&width=67&layout=box_count&action=like&size=large&share=false&height=65&appId" width="69" height="65" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
     </script>
     </p>
+    <p>&nbsp;</p>
  </body>
 </html>
