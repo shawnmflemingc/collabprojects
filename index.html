@@ -25,7 +25,16 @@
     }
 
 </style>
-
+  <!-- Global site tag (gtag.js) - Google Analytics --
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-156054783-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'UA-156054783-1');
+  </script>
+  <!--end Google-->
   <script>
   
 var clientId = 'NfihvUrqJtx0Ijjp';
@@ -102,7 +111,7 @@ $(function(){
         }),lang.hitch(this,function(error){
           if (error.code==498) { // token error
             if (urlParams.get("tokenerror") != "true") { // only execute redirect once to avoid loop
-              window.location.replace(redirectUri+"&tokenerror=true");
+              window.location.replace(redirectUri+"?tokenerror=true");
             }
             document.getElementById("Title").innerHTML = "Try again <a href='" + redirectUri + "'>using this link</a>";
           } else {
