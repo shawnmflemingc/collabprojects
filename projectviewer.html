@@ -366,7 +366,11 @@ function setBid(rankValue) {
               $("#bid"+(i)).html(urlParams.get('id'));
             } else {
               $("#bid"+(i)).removeClass("active");
-              $("#bid"+(i)).html(currentBids[i-1]);
+              if (currentBids[i-1]==0) {
+                $("#bid"+(i)).html("No Bid");
+              } else {
+                $("#bid"+(i)).html(currentBids[i-1]);
+              }
             }            
 					}
 					console.log(currentBids);
