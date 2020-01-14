@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html>
 
@@ -155,12 +156,13 @@ function replaceAll(str, find, replace) {
 }
 
 //jQuery run after page load
+var match = (window.location.hash) ? window.location.hash.match(/#access_token=([^&]+)/) : false;
+
 $(function(){
 
-  var match = (window.location.hash) ? window.location.hash.match(/#access_token=([^&]+)/) : false;
   if (match[1]==undefined) {
      var oauthUrl = 'https://fleming.maps.arcgis.com/sharing/rest/oauth2/authorize?client_id=' + clientId + '&response_type=token&expiration=30&redirect_uri=' + window.encodeURIComponent(redirectUri);
-     //window.location.replace(oauthUrl,'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes');
+     window.location.replace(oauthUrl,'oauth-window', 'height=400,width=600,menubar=no,location=yes,resizable=yes,scrollbars=yes,status=yes');
      document.getElementById("tableDiv").innerHTML = "<h1><a href='"+oauthUrl+"'>Please click here to authenticate with Fleming's ArcGIS Online to continue</a></h1>";
      throw new Error("Not authenticated");
   } 
@@ -292,9 +294,92 @@ function createTable(response){
         
     }); // End esriRequest	
 }	
-});
 
 
+}); // After page load end
+
+// Used to update the bidding record
+function UpdateData(ranking,projectId,groupName,objectId) {
+var updateUrl="https://services1.arcgis.com/pMeXRvgWClLJZr3s/ArcGIS/rest/services/Collaborative_Project_Bids/FeatureServer/0/applyEdits?token=" + match[1];
+
+if (objectId == undefined) { // Record doesn't exist, so add new value for ranking 
+	var updateDataString = 'f=json&adds={"attributes" : {"Ranking" : '+ranking.toString()+',"ProjectID" : '+projectId.toString()+',"GroupName" : "'+groupName+'" }}';
+} else { // Record exists, so UPDATE found ranking record using the OBJECTID provided with only the PROJECTID
+	var updateDataString = 'f=json&adds=&updates={"attributes" : {"OBJECTID" : '+objectId+',"ProjectID" : '+projectId.toString()+',"GroupName" : "'+groupName+'" }}';
+} // else
+	console.log(updateDataString);
+	$.post( updateUrl, updateDataString)
+	  .done(function( data ) {
+		$('#results').html("Data Loaded: " + data);
+	  });
+} // UpdateData
+
+
+function setBid(rankValue) {
+    require([
+      "dojo/_base/lang",
+      "esri/request",
+      "dojo/domReady!"
+    ], function(
+      lang, esriRequest
+    ) { // Generate request against ArcGIS Online REST API endpoint
+        // Token is retrieved from the url #access_token= and only valid after user is authenticated
+	  var groupName = "";
+	  var whereClause = "1+%3D+1"; // Return all records
+	  var restServiceUrl = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/ArcGIS/rest/services/Collaborative_Project_Bids/FeatureServer/0/query?where="+whereClause+"&outFields=*&orderByFields=EditDate&f=json&token="+match[1];
+      var url = restServiceUrl
+      esriRequest(url,{
+          responseType:'json',
+          callbackParamName:'callback',
+          timeout:10000
+        }).then(lang.hitch(this,function(resp){
+					var currentBids = [-1,-1,-1,-1,-1]; // array of bids - 4 bids is the limit
+					var currentObjectId = [0,0,0,0,0]; // objectid of bid set above
+					
+          if (resp.data.features.length > 0) {
+						// Successfully retrieved data
+						for (bidrec in resp.data.features) { // each record
+							currentBids[(resp.data.features[bidrec].attributes["Ranking"])-1] = resp.data.features[bidrec].attributes["ProjectID"]; // sets current saved projectid
+							currentObjectId[(resp.data.features[bidrec].attributes["Ranking"])-1] = resp.data.features[bidrec].attributes["ObjectId"]; // sets current saved objectid
+						};
+					}
+					if (currentBids[rankValue-1] > -1) { // current record exists for bid, so update
+						UpdateData(rankValue,urlParams.get('id'),groupName,currentObjectId[rankValue-1]);
+					} else {
+						UpdateData(rankValue,urlParams.get('id'),groupName);
+					}
+          
+					for (i = 1; i < 5; i++) {
+            
+
+
+
+						if (currentBids[i-1] == urlParams.get('id')) {
+              if (rankValue!=(i)) { // if the rank is already set don't do this
+                console.log("Duplicate for "+urlParams.get('id')+" removed from " + i);
+                UpdateData(i,0,"",currentObjectId[i-1]); // Sets duplicate project to ProjectId -1
+                currentBids[i-1] = 0;
+              }
+            }
+            if (rankValue==(i)) {
+              $("#bid"+(i)).addClass("active");
+              $("#bid"+(i)).html(urlParams.get('id'));
+            } else {
+              $("#bid"+(i)).removeClass("active");
+              $("#bid"+(i)).html(currentBids[i-1]);
+            }            
+					}
+					console.log(currentBids);
+					console.log(currentObjectId);
+
+					
+        }),lang.hitch(this,function(error){
+			console.log(error);
+			alert("error");
+        }));
+        
+    }); // End esriRequest	
+} // End setBid 
 
 
 
@@ -305,10 +390,10 @@ function createTable(response){
 <body>
   <ul class="bid">
     <li class="bid"><div>Your Bid:</div></li>
-    <li class="bid"><a id="bid1" href="#home">1</a></li>
-    <li class="bid"><a id="bid2" href="#news">2</a></li>
-    <li class="bid"><a id="bid3" href="#contact">3</a></li>
-    <li class="bid"><a id="bid4" href="#about">4</a></li>
+    <li class="bid"><a id="bid1" onclick="setBid(1);">1st</a></li>
+    <li class="bid"><a id="bid2" onclick="setBid(2);">2nd</a></li>
+    <li class="bid"><a id="bid3" onclick="setBid(3);">3rd</a></li>
+    <li class="bid"><a id="bid4" onclick="setBid(4);">4th</a></li>
   </ul>
     <ul class="topnav">
     <li><a href="index.html" id="home">Project List</a></li>
@@ -321,7 +406,7 @@ function createTable(response){
   <h2 id="ProjectName">Loading Project...</h2>
     <table id="tableDiv"></table>
     <p>Use this Facebook like button to advertise you are interested in this project:<div id="fblikehere"></div>
-    
+    <p id="results"></p>
     <script>
     document.getElementById("fblikehere").innerHTML = '<iframe src="https://www.facebook.com/plugins/like.php?href=http%3A%2F%2Fprojects.geocommunity.net%3Fid%3D' + urlParams.get('id') +'&width=67&layout=box_count&action=like&size=large&share=false&height=65&appId" width="69" height="65" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>';
     </script>
