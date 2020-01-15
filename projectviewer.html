@@ -108,7 +108,13 @@
     li.bid a:hover:not(.active) {
       background-color: #111;
     }
+    li.bid {
+      border-right: 1px solid #bbb;
+    }
 
+    li.bid:last-child {
+      border-right: none;
+    }
     .active {
       background-color: #4CAF50;
     }
@@ -287,6 +293,7 @@ function createTable(response){
 					console.log(resp);
           if (resp.data.features.length > 0) {
             $("#bid"+resp.data.features[0].attributes["Ranking"]).addClass("active");
+            $(groupentry).val(resp.data.features[0].attributes["GroupName"]);
           }
         }),lang.hitch(this,function(error){
 					console.log(error);
@@ -310,7 +317,22 @@ if (objectId == undefined) { // Record doesn't exist, so add new value for ranki
 	console.log(updateDataString);
 	$.post( updateUrl, updateDataString)
 	  .done(function( data ) {
-		$('#results').html("Data Loaded: " + data);
+		//$('#results').html("Data Loaded: " + data);
+      try {
+        var result = JSON.parse(data);
+        if (result.hasOwnProperty("result.error.code")) { // Was there an error returned?
+          alert("Failed to commit change: " + data);
+          return;
+        }
+        if ((result.updateResults[0].success == true) || (result.addResults[0].success == true)) {
+          // success
+        } else {
+          alert("Failed to commit change: " + data);
+        }
+      } catch(err) {
+        console.log(err);
+        alert(err.toString());
+      }
 	  });
 } // UpdateData
 
@@ -324,7 +346,7 @@ function setBid(rankValue) {
       lang, esriRequest
     ) { // Generate request against ArcGIS Online REST API endpoint
         // Token is retrieved from the url #access_token= and only valid after user is authenticated
-	  var groupName = "";
+	  var groupName = $("#groupentry").val();
 	  var whereClause = "1+%3D+1"; // Return all records
 	  var restServiceUrl = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/ArcGIS/rest/services/Collaborative_Project_Bids/FeatureServer/0/query?where="+whereClause+"&outFields=*&orderByFields=EditDate&f=json&token="+match[1];
       var url = restServiceUrl
@@ -343,30 +365,32 @@ function setBid(rankValue) {
 							currentObjectId[(resp.data.features[bidrec].attributes["Ranking"])-1] = resp.data.features[bidrec].attributes["ObjectId"]; // sets current saved objectid
 						};
 					}
-					if (currentBids[rankValue-1] > -1) { // current record exists for bid, so update
-						UpdateData(rankValue,urlParams.get('id'),groupName,currentObjectId[rankValue-1]);
-					} else {
-						UpdateData(rankValue,urlParams.get('id'),groupName);
-					}
-          
+          var success = false;
+          if (rankValue!=-1) { // Don't do the work if rankValue is -1
+            if (currentBids[rankValue-1] > -1) { // current record exists for bid, so update
+              success = UpdateData(rankValue,urlParams.get('id'),groupName,currentObjectId[rankValue-1]);
+            } else {
+              success = UpdateData(rankValue,urlParams.get('id'),groupName);
+            }
+          }
+          if (success===false) {return;}
 					for (i = 1; i < 5; i++) {
-            
-
-
-
 						if (currentBids[i-1] == urlParams.get('id')) {
-              if (rankValue!=(i)) { // if the rank is already set don't do this
+              if (rankValue!=(i) && rankValue!=-1) { // if the rank is already set don't do this
                 console.log("Duplicate for "+urlParams.get('id')+" removed from " + i);
-                UpdateData(i,0,"",currentObjectId[i-1]); // Sets duplicate project to ProjectId -1
+                success = UpdateData(i,0,"",currentObjectId[i-1]); // Sets duplicate project to ProjectId -1
+                if (success===false) {return;}
                 currentBids[i-1] = 0;
               }
             }
-            if (rankValue==(i)) {
+            $("#bid"+(i)).prop("onclick", null).off("click"); // disable all buttons now that bid has committed
+            $("#bidlabel").html("Your bids:");
+            if (rankValue==(i)) {  // update label with actual bid values and set as active for current
               $("#bid"+(i)).addClass("active");
               $("#bid"+(i)).html(urlParams.get('id'));
             } else {
               $("#bid"+(i)).removeClass("active");
-              if (currentBids[i-1]==0) {
+              if (currentBids[i-1]==0) {  // Those with 0 as bid are blank/empty
                 $("#bid"+(i)).html("No Bid");
               } else {
                 $("#bid"+(i)).html(currentBids[i-1]);
@@ -393,11 +417,12 @@ function setBid(rankValue) {
 
 <body>
   <ul class="bid">
-    <li class="bid"><div>Your Bid:</div></li>
+    <li class="bid"><div id="bidlabel">Set Rank:</div></li>
     <li class="bid"><a id="bid1" onclick="setBid(1);">1st</a></li>
     <li class="bid"><a id="bid2" onclick="setBid(2);">2nd</a></li>
     <li class="bid"><a id="bid3" onclick="setBid(3);">3rd</a></li>
     <li class="bid"><a id="bid4" onclick="setBid(4);">4th</a></li>
+    <li class="bid"><div>Group Name:&nbsp;<input type="text" name="groupentry" id="groupentry" value=""></div></li>
   </ul>
     <ul class="topnav">
     <li><a href="index.html" id="home">Project List</a></li>
