@@ -119,6 +119,8 @@
       background-color: #4CAF50;
     }
 
+    div.right {float: right;}
+
     /* end from w3schools */
   </style>
   <script src="https://js.arcgis.com/4.2/"></script>
@@ -302,7 +304,7 @@ function createTable(response){
     }); // End esriRequest	
 }	
 
-
+CheckBidCount();
 }); // After page load end
 
 // Used to update the bidding record
@@ -331,7 +333,7 @@ if (objectId == undefined) { // Record doesn't exist, so add new value for ranki
         }
       } catch(err) {
         console.log(err);
-        alert(err.toString());
+        //alert(err.toString());
       }
 	  });
 } // UpdateData
@@ -355,7 +357,7 @@ function setBid(rankValue) {
           callbackParamName:'callback',
           timeout:10000
         }).then(lang.hitch(this,function(resp){
-					var currentBids = [-1,-1,-1,-1,-1]; // array of bids - 4 bids is the limit
+					var currentBids = [0,0,0,0,0]; // array of bids - 4 bids is the limit
 					var currentObjectId = [0,0,0,0,0]; // objectid of bid set above
 					
           if (resp.data.features.length > 0) {
@@ -366,8 +368,8 @@ function setBid(rankValue) {
 						};
 					}
           var success = false;
-          if (rankValue!=-1) { // Don't do the work if rankValue is -1
-            if (currentBids[rankValue-1] > -1) { // current record exists for bid, so update
+          if (rankValue!=0) { // Don't do the work if rankValue is 0
+            if (currentBids[rankValue-1] > 0) { // current record exists for bid, so update
               success = UpdateData(rankValue,urlParams.get('id'),groupName,currentObjectId[rankValue-1]);
             } else {
               success = UpdateData(rankValue,urlParams.get('id'),groupName);
@@ -403,13 +405,44 @@ function setBid(rankValue) {
 					
         }),lang.hitch(this,function(error){
 			console.log(error);
-			alert("error");
+			
         }));
         
     }); // End esriRequest	
 } // End setBid 
 
 
+
+function CheckBidCount() {/*
+    require([
+      "dojo/_base/lang",
+      "esri/request",
+      "dojo/domReady!"
+    ], function(
+      lang, esriRequest
+    ) { // Generate request against ArcGIS Online REST API endpoint
+        // Token is retrieved from the url #access_token= and only valid after user is authenticated
+      
+  	  var whereClause = "ProjectID="+urlParams.get('id'); // Return all records
+      console.log("bid total calc start...")
+      var url = "https://services1.arcgis.com/pMeXRvgWClLJZr3s/arcgis/rest/services/Bids_and_GIS_Collaborative_Projects/FeatureServer/0/query?where="+whereClause+"&groupByFieldsForStatistics=Ranking&outStatistics=%5B%7B%0D%0A++++%22statisticType%22%3A+%22count%22%2C%0D%0A++++%22onStatisticField%22%3A+%22objectid%22%2C+%0D%0A++++%22outStatisticFieldName%22%3A+%22Count%22%0D%0A%7D%5D&f=json&token="+match[1];
+      esriRequest(url,{
+          responseType:'json',
+          callbackParamName:'callback',
+          timeout:10000
+        }).then(lang.hitch(this,function(resp){
+					console.log(resp);
+          if (resp.data.features.length > 0) {
+            for (bidsum in resp.data.features) {
+              $("#numbids"+(resp.data.features[bidsum].attributes.Ranking)).html(resp.data.features[bidsum].attributes.Count);
+            }
+          }
+        }),lang.hitch(this,function(error){
+					console.log(error);
+        }));
+        
+    }); // End esriRequest	
+*/}	
 
   </script>
 
@@ -423,6 +456,14 @@ function setBid(rankValue) {
     <li class="bid"><a id="bid3" onclick="setBid(3);">3rd</a></li>
     <li class="bid"><a id="bid4" onclick="setBid(4);">4th</a></li>
     <li class="bid"><div>Group Name:&nbsp;<input type="text" name="groupentry" id="groupentry" value=""></div></li>
+    <div class="right">
+      <li class="bid"><div id="numbidslabel">&Sigma;</div></li>
+      <li class="bid"><div id="numbids1">-</div></li>
+      <li class="bid"><div id="numbids2">-</div></li>
+      <li class="bid"><div id="numbids3">-</div></li>
+      <li class="bid"><div id="numbids4">-</div></li>
+    </div>
+
   </ul>
     <ul class="topnav">
     <li><a href="index.html" id="home">Project List</a></li>
